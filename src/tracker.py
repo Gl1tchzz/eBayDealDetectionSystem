@@ -68,8 +68,14 @@ class EbayTracker:
             "spares",
             "repair",
             "faulty",
-            "icloud",
             "locked",
+            "broken",
+            "damaged",
+            "cracked",
+            "water damage",
+            "not working",
+            "does not work",
+            "no power",
         ]
 
     def is_good_listing(self, listing):
