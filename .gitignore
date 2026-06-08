@@ -1,1 +1,4 @@
 .env
+seen_items.json
+__pycache__/
+*.pyc
