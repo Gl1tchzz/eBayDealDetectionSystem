@@ -22,6 +22,7 @@ class SpecParser:
         title_lower = title.lower()
 
         return {
+            "model": SpecParser.extract_model(title_lower),
             "screen_size": SpecParser.extract_screen_size(title_lower),
             "cpu": SpecParser.extract_cpu(title_lower),
             "ram": SpecParser.extract_ram(title_lower),
@@ -30,16 +31,62 @@ class SpecParser:
         }
 
     @staticmethod
+    def extract_model(title):
+        """
+        Determines whether the listing is a MacBook Air or MacBook Pro.
+
+        This is important because a 13-inch M1 MacBook can be either:
+        - MacBook Air M1
+        - MacBook Pro M1
+
+        Both may share the same size, year, chip and RAM,
+        but they have different MusicMagpie barcodes.
+        """
+
+        if "macbook air" in title:
+            return "Air"
+
+        if "macbook pro" in title:
+            return "Pro"
+
+        return "Unknown"
+
+    @staticmethod
     def extract_screen_size(title):
-        match = re.search(r"(13|13\.3|14|14\.2|15|16|16\.2)[\s-]?(inch|in|\"|'')?", title)
+        """
+        Extracts the screen size from the listing title.
+
+        Normalises common Apple display sizes:
+        - 13.3 -> 13
+        - 14.2 -> 14
+        - 16.2 -> 16
+        """
+
+        match = re.search(
+            r"(13|13\.3|14|14\.2|15|16|16\.2)[\s-]?(inch|in|\"|'')?",
+            title,
+        )
 
         if match:
-            return match.group(1) + '"'
+            size = match.group(1)
+
+            if size == "13.3":
+                size = "13"
+            elif size == "14.2":
+                size = "14"
+            elif size == "16.2":
+                size = "16"
+
+            return size + '"'
 
         return "Unknown"
 
     @staticmethod
     def extract_cpu(title):
+        """
+        Extracts the CPU / Apple Silicon chip from the title.
+        """
+
         cpu_patterns = [
             "m3 max",
             "m3 pro",
@@ -66,7 +113,14 @@ class SpecParser:
 
     @staticmethod
     def extract_ram(title):
-        match = re.search(r"(\d+)\s?(gb)\s?(ram|memory)?", title)
+        """
+        Extracts RAM amount from the listing title.
+        """
+
+        match = re.search(
+            r"(\d+)\s?(gb)\s?(ram|memory)?",
+            title,
+        )
 
         if match:
             return match.group(1) + "GB"
@@ -75,35 +129,45 @@ class SpecParser:
 
     @staticmethod
     def extract_storage(title):
-        match = re.search(r"(\d+)\s?(tb|gb)\s?(ssd|storage)?", title)
+        """
+        Extracts storage size from the listing title.
 
-        if match:
-            size = match.group(1)
-            unit = match.group(2).upper()
+        Uses all GB/TB matches and skips values that look like RAM.
+        """
 
-            # Avoid confusing RAM as storage
-            if "ram" not in match.group(0):
-                return size + unit
+        matches = re.findall(
+            r"(\d+)\s?(tb|gb)\s?(ssd|storage|ram|memory)?",
+            title,
+        )
+
+        for match in matches:
+            size = match[0]
+            unit = match[1].upper()
+            label = match[2].lower() if match[2] else ""
+
+            if label in ["ram", "memory"]:
+                continue
+
+            return size + unit
 
         return "Unknown"
 
     @staticmethod
     def extract_year(title):
         """
-        Extract year from title.
-        If no year is present, infer it from CPU.
+        Extracts year from title.
+
+        If no year is present, it infers the likely year from the CPU.
         """
 
-        # Explicit year in title
         match = re.search(
             r"(2016|2017|2018|2019|2020|2021|2022|2023|2024|2025)",
-            title
+            title,
         )
 
         if match:
             return match.group(1)
 
-        # CPU-based inference
         if "m1 pro" in title:
             return "2021"
 
@@ -131,7 +195,6 @@ class SpecParser:
         if "m3" in title:
             return "2023"
 
-        # Intel generation estimates
         if "i9" in title:
             return "2019-2020"
 
