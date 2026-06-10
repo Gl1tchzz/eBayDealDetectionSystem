@@ -27,6 +27,13 @@ class Config:
             "faulty",
             "icloud",
             "locked",
+            "broken",
+            "damaged",
+            "cracked",
+            "non-working",
+            "AZERTY",
+            "QWERTZ",
+            "grade d"
         ]
 
         self.search_categories = [
