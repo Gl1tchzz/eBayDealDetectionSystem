@@ -115,15 +115,29 @@ class SpecParser:
     def extract_ram(title):
         """
         Extracts RAM amount from the listing title.
+
+        Prioritises values that are clearly RAM/memory/unified memory.
+        Avoids confusing storage values like 256GB SSD with RAM.
         """
 
+        # Strong matches first: 8GB RAM, 16GB memory, 8GB unified memory
         match = re.search(
-            r"(\d+)\s?(gb)\s?(ram|memory)?",
+            r"(\d+)\s?(gb)\s?(ram|memory|unified memory)",
             title,
         )
 
         if match:
             return match.group(1) + "GB"
+
+        # Apple Silicon MacBooks usually have RAM values of 8GB, 16GB, 24GB, 32GB, 64GB, 96GB.
+        # This avoids treating 256GB / 512GB / 1TB storage as RAM.
+        possible_ram_values = re.findall(
+            r"\b(8|16|24|32|64|96)\s?gb\b",
+            title,
+        )
+
+        if possible_ram_values:
+            return possible_ram_values[0] + "GB"
 
         return "Unknown"
 
