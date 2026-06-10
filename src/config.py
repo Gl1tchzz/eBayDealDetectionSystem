@@ -40,14 +40,14 @@ class Config:
             SearchCategory(
                 name="MacBook Pro M1 Pro",
                 query="MacBook Pro M1 Pro",
-                max_price=550,
+                max_price=600,
                 required_words=["macbook", "pro", "m1"],
                 banned_words=self.banned_words,
             ),
             SearchCategory(
                 name="MacBook Pro M1 Max",
                 query="MacBook Pro M1 Max",
-                max_price=700,
+                max_price=750,
                 required_words=["macbook", "pro", "m1", "max"],
                 banned_words=self.banned_words,
             ),
@@ -61,7 +61,7 @@ class Config:
             SearchCategory(
                 name="MacBook Air M1",
                 query="MacBook Air M1",
-                max_price=400,
+                max_price=300,
                 required_words=["macbook", "air", "m1"],
                 banned_words=self.banned_words,
             ),
