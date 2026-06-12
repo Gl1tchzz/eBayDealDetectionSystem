@@ -1,9 +1,20 @@
+"""
+Main tracker loop.
+
+Searches eBay for matching MacBook listings and sends Discord alerts.
+"""
+
 import time
 import requests
+
 from src.listing import Listing
 
 
 class EbayTracker:
+    """
+    Runs Buy It Now and auction searches.
+    """
+
     def __init__(
         self,
         ebay_client,
@@ -21,6 +32,10 @@ class EbayTracker:
         self.seen_items = self.seen_items_manager.load()
 
     def is_good_listing(self, listing, category):
+        """
+        Checks whether a listing matches category rules.
+        """
+
         title = listing.title_lower()
 
         if not all(word in title for word in category.required_words):
@@ -44,15 +59,120 @@ class EbayTracker:
         print(f"Category : {category.name}")
         print(f"Title    : {listing.title}")
         print(f"Price    : £{listing.price}")
+        print(f"Model    : {specs['model']}")
         print(f"CPU      : {specs['cpu']}")
         print(f"RAM      : {specs['ram']}")
         print(f"Storage  : {specs['storage']}")
         print(f"Year     : {specs['year']}")
         print(f"Size     : {specs['screen_size']}")
+
+        if listing.item_end_date:
+            print(f"Ends     : {listing.item_end_date}")
+
         print(f"URL      : {listing.url}")
         print("=" * 60)
 
+    def process_fixed_price_category(self, category):
+        """
+        Searches and processes Buy It Now listings for one category.
+        """
+
+        print(
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] "
+            f"Searching Buy It Now: {category.name}"
+        )
+
+        items = self.ebay_client.search(
+            query=category.query,
+            max_price=category.max_price,
+        )
+
+        print(f"Found {len(items)} Buy It Now listings")
+
+        for item in items:
+            listing = Listing(item)
+
+            if not listing.id:
+                continue
+
+            seen_key = f"FIXED:{category.name}:{listing.id}"
+
+            if seen_key in self.seen_items:
+                continue
+
+            self.seen_items.add(seen_key)
+
+            if self.is_good_listing(listing, category):
+                self.log_match(listing, category)
+
+                try:
+                    self.notifier.send_listing(
+                        listing=listing,
+                        category=category,
+                    )
+
+                    time.sleep(2)
+
+                except requests.exceptions.HTTPError as error:
+                    print("Discord HTTP error:", error)
+
+                    if error.response is not None and error.response.status_code == 429:
+                        print("Rate limited. Waiting 10 seconds...")
+                        time.sleep(10)
+
+    def process_auction_category(self, category):
+        """
+        Searches and processes auction listings for one category.
+        """
+
+        print(
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] "
+            f"Searching auctions ending soon: {category.name}"
+        )
+
+        items = self.ebay_client.search_auctions_ending_soon(
+            query=category.query,
+            max_price=category.max_price,
+        )
+
+        print(f"Found {len(items)} auction listings")
+
+        for item in items:
+            listing = Listing(item)
+
+            if not listing.id:
+                continue
+
+            seen_key = f"AUCTION:{category.name}:{listing.id}"
+
+            if seen_key in self.seen_items:
+                continue
+
+            self.seen_items.add(seen_key)
+
+            if self.is_good_listing(listing, category):
+                self.log_match(listing, category)
+
+                try:
+                    self.notifier.send_auction_listing(
+                        listing=listing,
+                        category=category,
+                    )
+
+                    time.sleep(2)
+
+                except requests.exceptions.HTTPError as error:
+                    print("Discord auction HTTP error:", error)
+
+                    if error.response is not None and error.response.status_code == 429:
+                        print("Auction webhook rate limited. Waiting 10 seconds...")
+                        time.sleep(10)
+
     def run(self):
+        """
+        Runs the tracker forever until stopped.
+        """
+
         print("Starting multi-MacBook tracker...")
         print(f"Checking every {self.check_every_seconds} seconds")
         print("-" * 60)
@@ -60,51 +180,8 @@ class EbayTracker:
         while True:
             try:
                 for category in self.search_categories:
-                    print(
-                        f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] "
-                        f"Searching: {category.name}"
-                    )
-
-                    items = self.ebay_client.search(
-                        query=category.query,
-                        max_price=category.max_price,
-                    )
-
-                    print(f"Found {len(items)} listings")
-
-                    for item in items:
-                        listing = Listing(item)
-
-                        if not listing.id:
-                            continue
-
-                        seen_key = f"{category.name}:{listing.id}"
-
-                        if seen_key in self.seen_items:
-                            continue
-
-                        self.seen_items.add(seen_key)
-
-                        if self.is_good_listing(listing, category):
-                            self.log_match(listing, category)
-
-                            try:
-                                self.notifier.send_listing(
-                                    listing=listing,
-                                    category=category,
-                                )
-
-                                time.sleep(2)
-
-                            except requests.exceptions.HTTPError as error:
-                                print("Discord HTTP error:", error)
-
-                                if (
-                                    error.response is not None
-                                    and error.response.status_code == 429
-                                ):
-                                    print("Rate limited. Waiting 10 seconds...")
-                                    time.sleep(10)
+                    self.process_fixed_price_category(category)
+                    self.process_auction_category(category)
 
                     self.seen_items_manager.save(self.seen_items)
 

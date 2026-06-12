@@ -1,3 +1,7 @@
+"""
+Application entry point.
+"""
+
 from src.config import Config
 from src.ebay_client import EbayClient
 from src.discord_notifier import DiscordNotifier
@@ -6,6 +10,10 @@ from src.tracker import EbayTracker
 
 
 def main():
+    """
+    Creates dependencies and starts the tracker.
+    """
+
     config = Config()
 
     ebay_client = EbayClient(
@@ -15,6 +23,7 @@ def main():
 
     notifier = DiscordNotifier(
         webhook_url=config.discord_webhook_url,
+        auction_webhook_url=config.discord_auction_webhook_url,
     )
 
     seen_items_manager = SeenItemsManager(
