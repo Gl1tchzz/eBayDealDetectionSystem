@@ -38,7 +38,13 @@ class Config:
             "grade d",
             "Smashed Screen",
             "Display Issue",
-            "Water Damage"
+            "Water Damage",
+            "Read Description" ,
+            "lines on screen",
+            "for part",
+            "Dead Battery",
+            "Bad Battery,"
+            "Screen Lines",
         ]
 
         self.search_categories = [
