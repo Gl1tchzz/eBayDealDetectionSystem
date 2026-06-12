@@ -25,6 +25,7 @@ class Config:
             "spares",
             "repair",
             "faulty",
+            "fault",
             "icloud",
             "locked",
             "broken",
