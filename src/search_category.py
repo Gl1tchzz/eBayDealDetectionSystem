@@ -1,7 +1,3 @@
-"""
-Represents one MacBook search category.
-"""
-
 class SearchCategory:
     def __init__(
         self,

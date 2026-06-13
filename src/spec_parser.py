@@ -1,24 +1,9 @@
-"""
-Extracts MacBook specs from eBay listing titles.
-
-The eBay API does not always provide clean structured specs,
-so this parser uses the listing title as the main source.
-"""
-
 import re
 
 
 class SpecParser:
-    """
-    Parses useful MacBook details from a listing title.
-    """
-
     @staticmethod
     def parse(title):
-        """
-        Returns a dictionary of extracted specs.
-        """
-
         title_lower = title.lower()
 
         return {
@@ -32,17 +17,6 @@ class SpecParser:
 
     @staticmethod
     def extract_model(title):
-        """
-        Determines whether the listing is a MacBook Air or MacBook Pro.
-
-        This is important because a 13-inch M1 MacBook can be either:
-        - MacBook Air M1
-        - MacBook Pro M1
-
-        Both may share the same size, year, chip and RAM,
-        but they have different MusicMagpie barcodes.
-        """
-
         if "macbook air" in title:
             return "Air"
 
@@ -53,40 +27,27 @@ class SpecParser:
 
     @staticmethod
     def extract_screen_size(title):
-        """
-        Extracts the screen size from the listing title.
-
-        Normalises common Apple display sizes:
-        - 13.3 -> 13
-        - 14.2 -> 14
-        - 16.2 -> 16
-        """
-
         match = re.search(
             r"(13|13\.3|14|14\.2|15|16|16\.2)[\s-]?(inch|in|\"|'')?",
             title,
         )
 
-        if match:
-            size = match.group(1)
+        if not match:
+            return "Unknown"
 
-            if size == "13.3":
-                size = "13"
-            elif size == "14.2":
-                size = "14"
-            elif size == "16.2":
-                size = "16"
+        size = match.group(1)
 
-            return size + '"'
+        if size == "13.3":
+            size = "13"
+        elif size == "14.2":
+            size = "14"
+        elif size == "16.2":
+            size = "16"
 
-        return "Unknown"
+        return size + '"'
 
     @staticmethod
     def extract_cpu(title):
-        """
-        Extracts the CPU / Apple Silicon chip from the title.
-        """
-
         cpu_patterns = [
             "m3 max",
             "m3 pro",
@@ -113,24 +74,14 @@ class SpecParser:
 
     @staticmethod
     def extract_ram(title):
-        """
-        Extracts RAM amount from the listing title.
-
-        Prioritises values that are clearly RAM/memory/unified memory.
-        Avoids confusing storage values like 256GB SSD with RAM.
-        """
-
-        # Strong matches first: 8GB RAM, 16GB memory, 8GB unified memory
         match = re.search(
-            r"(\d+)\s?(gb)\s?(ram|memory|unified memory)",
+            r"\b(8|16|24|32|64|96)\s?gb\s?(ram|memory|unified memory)\b",
             title,
         )
 
         if match:
             return match.group(1) + "GB"
 
-        # Apple Silicon MacBooks usually have RAM values of 8GB, 16GB, 24GB, 32GB, 64GB, 96GB.
-        # This avoids treating 256GB / 512GB / 1TB storage as RAM.
         possible_ram_values = re.findall(
             r"\b(8|16|24|32|64|96)\s?gb\b",
             title,
@@ -143,39 +94,38 @@ class SpecParser:
 
     @staticmethod
     def extract_storage(title):
-        """
-        Extracts storage size from the listing title.
-
-        Uses all GB/TB matches and skips values that look like RAM.
-        """
-
-        matches = re.findall(
-            r"(\d+)\s?(tb|gb)\s?(ssd|storage|ram|memory)?",
+        explicit_storage = re.findall(
+            r"\b(128|256|512|1024|2048|1|2|4|8)\s?(gb|tb)\s?(ssd|storage)\b",
             title,
         )
 
-        for match in matches:
-            size = match[0]
-            unit = match[1].upper()
-            label = match[2].lower() if match[2] else ""
+        if explicit_storage:
+            size = explicit_storage[0][0]
+            unit = explicit_storage[0][1].upper()
 
-            if label in ["ram", "memory"]:
-                continue
+            if unit == "GB":
+                return size + "GB"
 
-            return size + unit
+            return size + "TB"
+
+        generic_storage = re.findall(
+            r"\b(128|256|512|1024|2048)\s?gb\b|\b(1|2|4|8)\s?tb\b",
+            title,
+        )
+
+        for gb_value, tb_value in generic_storage:
+            if gb_value:
+                return gb_value + "GB"
+
+            if tb_value:
+                return tb_value + "TB"
 
         return "Unknown"
 
     @staticmethod
     def extract_year(title):
-        """
-        Extracts year from title.
-
-        If no year is present, it infers the likely year from the CPU.
-        """
-
         match = re.search(
-            r"(2016|2017|2018|2019|2020|2021|2022|2023|2024|2025)",
+            r"(2016|2017|2018|2019|2020|2021|2022|2023|2024|2025|2026)",
             title,
         )
 
