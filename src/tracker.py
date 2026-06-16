@@ -180,6 +180,24 @@ class EbayTracker:
                 stats["missing_id"] += 1
                 continue
 
+            seen_key = f"AUCTION:{category.name}:{listing.id}"
+
+            if seen_key in self.seen_items:
+                stats["already_seen"] += 1
+                continue
+
+            # Check whether the auction actually ends within 24h first.
+            # This stops later-ending duplicate listings from blocking
+            # same-title listings that end sooner.
+            if not self.auction_ends_within_24_hours(listing):
+                stats["not_ending_24h"] += 1
+                continue
+
+            if not self.is_good_listing(listing, category):
+                stats["failed_filters"] += 1
+                continue
+
+            # Deduplicate only after the listing has passed the important filters.
             normalised_title = " ".join(
                 listing.title_lower().split()
             )
@@ -189,20 +207,6 @@ class EbayTracker:
                 continue
 
             duplicate_titles_seen.add(normalised_title)
-
-            seen_key = f"AUCTION:{category.name}:{listing.id}"
-
-            if seen_key in self.seen_items:
-                stats["already_seen"] += 1
-                continue
-
-            if not self.auction_ends_within_24_hours(listing):
-                stats["not_ending_24h"] += 1
-                continue
-
-            if not self.is_good_listing(listing, category):
-                stats["failed_filters"] += 1
-                continue
 
             self.seen_items.add(seen_key)
             self.seen_items_manager.save(self.seen_items)

@@ -61,7 +61,7 @@ class Config:
             SearchCategory(
                 name="MacBook Pro M1 Pro",
                 query="MacBook Pro M1 Pro",
-                max_price=600,
+                max_price=650,
                 required_words=["macbook", "pro", "m1 pro"],
                 banned_words=self.banned_words,
             ),
