@@ -1,0 +1,14 @@
+name: Deploy to Raspberry Pi
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Deploy MacBook Tracker
+        run: /mnt/NAS/server/infrastructure/scripts/deploy-macbook-tracker.sh
