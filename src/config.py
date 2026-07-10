@@ -52,7 +52,10 @@ class Config:
 
         self.check_every_seconds = 300
 
-        self.seen_file = "seen_items.json"
+        self.seen_file = os.getenv(
+            "SEEN_ITEMS_FILE",
+            "/app/data/seen_items.json",
+        )
 
         # =====================================================
         # Common banned words
