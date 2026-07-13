@@ -91,6 +91,11 @@ class Config:
             "dead battery",
             "bad battery",
             "screen lines",
+            "line on screen",
+            "screen replacement",
+            "replacement",
+            "protector"
+
         ]
 
         # =====================================================
