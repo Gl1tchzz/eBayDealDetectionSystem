@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 from src.search_category import SearchCategory
@@ -7,6 +9,18 @@ from src.search_category import SearchCategory
 class Config:
     def __init__(self):
         load_dotenv()
+
+        # =====================================================
+        # Project paths
+        # =====================================================
+
+        project_root = Path(__file__).resolve().parent.parent
+
+        default_data_directory = project_root / "data"
+        default_data_directory.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
         # =====================================================
         # eBay API Credentials (supports multiple API keys)
@@ -29,9 +43,10 @@ class Config:
 
         # Remove empty credentials
         self.ebay_credentials = [
-            cred
-            for cred in self.ebay_credentials
-            if cred["client_id"] and cred["client_secret"]
+            credential
+            for credential in self.ebay_credentials
+            if credential["client_id"]
+            and credential["client_secret"]
         ]
 
         # =====================================================
@@ -52,9 +67,14 @@ class Config:
 
         self.check_every_seconds = 300
 
+        # Local default:
+        # <project>/data/seen_items.json
+        #
+        # Docker can override this using:
+        # SEEN_ITEMS_FILE=/app/data/seen_items.json
         self.seen_file = os.getenv(
             "SEEN_ITEMS_FILE",
-            "/app/data/seen_items.json",
+            str(default_data_directory / "seen_items.json"),
         )
 
         # =====================================================
@@ -94,8 +114,7 @@ class Config:
             "line on screen",
             "screen replacement",
             "replacement",
-            "protector"
-
+            "protector",
         ]
 
         # =====================================================
@@ -207,7 +226,6 @@ class Config:
         self.validate()
 
     def validate(self):
-
         if not self.ebay_credentials:
             raise ValueError(
                 "No eBay API credentials found."
