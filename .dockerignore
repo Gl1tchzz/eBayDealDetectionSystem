@@ -1,5 +1,5 @@
-k.env
-seen_items.json
 data/
+.git/
 __pycache__/
 *.pyc
+.env

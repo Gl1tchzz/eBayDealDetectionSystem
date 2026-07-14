@@ -6,3 +6,7 @@ services:
     env_file:
       - .env
     shm_size: "1gb"
+    environment:
+      SEEN_ITEMS_FILE: /app/data/seen_items.json
+    volumes:
+      - ./data:/app/data
