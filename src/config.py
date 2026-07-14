@@ -10,21 +10,10 @@ class Config:
     def __init__(self):
         load_dotenv()
 
-        # =====================================================
-        # Project paths
-        # =====================================================
-
         project_root = Path(__file__).resolve().parent.parent
 
         default_data_directory = project_root / "data"
-        default_data_directory.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
-        # =====================================================
-        # eBay API Credentials (supports multiple API keys)
-        # =====================================================
+        default_data_directory.mkdir(parents=True, exist_ok=True)
 
         self.ebay_credentials = [
             {
@@ -41,45 +30,31 @@ class Config:
             },
         ]
 
-        # Remove empty credentials
         self.ebay_credentials = [
             credential
             for credential in self.ebay_credentials
-            if credential["client_id"]
-            and credential["client_secret"]
+            if credential["client_id"] and credential["client_secret"]
         ]
 
-        # =====================================================
-        # Discord
-        # =====================================================
-
-        self.discord_webhook_url = os.getenv(
-            "DISCORD_WEBHOOK_URL"
+        self.discord_macbook_webhook_url = (
+            os.getenv("DISCORD_MACBOOK_WEBHOOK_URL")
+            or os.getenv("DISCORD_WEBHOOK_URL")
         )
 
-        self.discord_auction_webhook_url = os.getenv(
-            "DISCORD_AUCTION_WEBHOOK_URL"
+        self.discord_macbook_auction_webhook_url = (
+            os.getenv("DISCORD_MACBOOK_AUCTION_WEBHOOK_URL")
+            or os.getenv("DISCORD_AUCTION_WEBHOOK_URL")
         )
 
-        # =====================================================
-        # Tracker Settings
-        # =====================================================
+        self.discord_ps5_webhook_url = os.getenv("DISCORD_PS5_WEBHOOK_URL")
+        self.discord_ps5_auction_webhook_url = os.getenv("DISCORD_PS5_AUCTION_WEBHOOK_URL")
 
-        self.check_every_seconds = 300
+        self.check_every_seconds = int(os.getenv("CHECK_EVERY_SECONDS", "300"))
 
-        # Local default:
-        # <project>/data/seen_items.json
-        #
-        # Docker can override this using:
-        # SEEN_ITEMS_FILE=/app/data/seen_items.json
         self.seen_file = os.getenv(
             "SEEN_ITEMS_FILE",
             str(default_data_directory / "seen_items.json"),
         )
-
-        # =====================================================
-        # Common banned words
-        # =====================================================
 
         self.banned_words = [
             "case",
@@ -117,109 +92,121 @@ class Config:
             "protector",
         ]
 
-        # =====================================================
-        # Search Categories
-        # =====================================================
+        self.ps5_banned_words = [
+            "box only",
+            "empty box",
+            "repair",
+            "parts",
+            "spares",
+            "broken",
+            "faulty",
+            "fault",
+            "shell",
+            "case",
+            "cover",
+            "controller only",
+            "controllers only",
+            "pad only",
+            "hdmi",
+            "cable",
+            "stand",
+            "skin",
+            "account",
+            "banned",
+            "read description",
+            "disc only",
+            "game only",
+            "bundle games only",
+        ]
 
         self.search_categories = [
-
-            # ---------------------------------
-            # MacBook Pro M1
-            # ---------------------------------
-
             SearchCategory(
                 name="MacBook Pro M1",
                 query="MacBook Pro M1",
                 max_price=450,
-                required_words=[
-                    "macbook",
-                    "pro",
-                    "m1",
-                ],
-                banned_words=self.banned_words + [
-                    "m1 pro",
-                    "m1 max",
-                ],
+                required_words=["macbook", "pro", "m1"],
+                banned_words=self.banned_words + ["m1 pro", "m1 max"],
+                product_type="macbook",
             ),
-
-            # ---------------------------------
-            # MacBook Pro M1 Pro
-            # ---------------------------------
-
             SearchCategory(
                 name="MacBook Pro M1 Pro",
                 query="MacBook Pro M1 Pro",
                 max_price=600,
-                required_words=[
-                    "macbook",
-                    "pro",
-                    "m1 pro",
-                ],
+                required_words=["macbook", "pro", "m1 pro"],
                 banned_words=self.banned_words,
+                product_type="macbook",
             ),
-
-            # ---------------------------------
-            # MacBook Pro M1 Max
-            # ---------------------------------
-
             SearchCategory(
                 name="MacBook Pro M1 Max",
                 query="MacBook Pro M1 Max",
                 max_price=700,
-                required_words=[
-                    "macbook",
-                    "pro",
-                    "m1 max",
-                ],
+                required_words=["macbook", "pro", "m1 max"],
                 banned_words=self.banned_words,
+                product_type="macbook",
             ),
-
-            # ---------------------------------
-            # MacBook Pro M2 Pro
-            # ---------------------------------
-
             SearchCategory(
                 name="MacBook Pro M2 Pro",
                 query="MacBook Pro M2 Pro",
                 max_price=850,
-                required_words=[
-                    "macbook",
-                    "pro",
-                    "m2 pro",
-                ],
+                required_words=["macbook", "pro", "m2 pro"],
                 banned_words=self.banned_words,
+                product_type="macbook",
             ),
-
-            # ---------------------------------
-            # MacBook Air M1
-            # ---------------------------------
-
             SearchCategory(
                 name="MacBook Air M1",
                 query="MacBook Air M1",
                 max_price=400,
-                required_words=[
-                    "macbook",
-                    "air",
-                    "m1",
-                ],
+                required_words=["macbook", "air", "m1"],
                 banned_words=self.banned_words,
+                product_type="macbook",
             ),
-
-            # ---------------------------------
-            # MacBook Air M2
-            # ---------------------------------
-
             SearchCategory(
                 name="MacBook Air M2",
                 query="MacBook Air M2",
                 max_price=600,
-                required_words=[
-                    "macbook",
-                    "air",
-                    "m2",
-                ],
+                required_words=["macbook", "air", "m2"],
                 banned_words=self.banned_words,
+                product_type="macbook",
+            ),
+            SearchCategory(
+                name="PlayStation 5 Disc Edition",
+                query="PlayStation 5 Console Disc",
+                max_price=280,
+                required_words=["playstation 5"],
+                banned_words=self.ps5_banned_words + ["digital", "slim", "pro"],
+                product_type="ps5",
+            ),
+            SearchCategory(
+                name="PlayStation 5 Digital Edition",
+                query="PlayStation 5 Digital Edition",
+                max_price=230,
+                required_words=["digital"],
+                banned_words=self.ps5_banned_words + ["slim", "pro"],
+                product_type="ps5",
+            ),
+            SearchCategory(
+                name="PlayStation 5 Slim Disc Edition",
+                query="PlayStation 5 Slim Disc",
+                max_price=320,
+                required_words=["slim"],
+                banned_words=self.ps5_banned_words + ["digital", "pro"],
+                product_type="ps5",
+            ),
+            SearchCategory(
+                name="PlayStation 5 Slim Digital Edition",
+                query="PlayStation 5 Slim Digital",
+                max_price=270,
+                required_words=["slim", "digital"],
+                banned_words=self.ps5_banned_words + ["pro"],
+                product_type="ps5",
+            ),
+            SearchCategory(
+                name="PlayStation 5 Pro",
+                query="PlayStation 5 Pro",
+                max_price=500,
+                required_words=["pro"],
+                banned_words=self.ps5_banned_words,
+                product_type="ps5",
             ),
         ]
 
@@ -227,16 +214,16 @@ class Config:
 
     def validate(self):
         if not self.ebay_credentials:
-            raise ValueError(
-                "No eBay API credentials found."
-            )
+            raise ValueError("No eBay API credentials found.")
 
-        if not self.discord_webhook_url:
-            raise ValueError(
-                "DISCORD_WEBHOOK_URL missing"
-            )
+        if not self.discord_macbook_webhook_url:
+            raise ValueError("DISCORD_MACBOOK_WEBHOOK_URL missing")
 
-        if not self.discord_auction_webhook_url:
-            raise ValueError(
-                "DISCORD_AUCTION_WEBHOOK_URL missing"
-            )
+        if not self.discord_macbook_auction_webhook_url:
+            raise ValueError("DISCORD_MACBOOK_AUCTION_WEBHOOK_URL missing")
+
+        if not self.discord_ps5_webhook_url:
+            raise ValueError("DISCORD_PS5_WEBHOOK_URL missing")
+
+        if not self.discord_ps5_auction_webhook_url:
+            raise ValueError("DISCORD_PS5_AUCTION_WEBHOOK_URL missing")

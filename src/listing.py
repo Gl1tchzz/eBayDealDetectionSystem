@@ -1,3 +1,4 @@
+from src.ps5_parser import Ps5Parser
 from src.spec_parser import SpecParser
 
 
@@ -18,6 +19,7 @@ class Listing:
         self.buying_options = item.get("buyingOptions", [])
 
         self.specs = SpecParser.parse(self.title)
+        self.ps5_specs = Ps5Parser.parse(self.title)
 
     def title_lower(self):
         return self.title.lower()
