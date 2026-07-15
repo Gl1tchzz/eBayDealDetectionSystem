@@ -101,6 +101,7 @@ class EbayTracker:
         items = self.ebay_client.search(
             query=category.query,
             max_price=category.max_price,
+            category_ids=category.category_ids,
         )
 
         posted_count = 0
@@ -160,6 +161,7 @@ class EbayTracker:
         items = self.ebay_client.search_auctions_ending_soon(
             query=category.query,
             max_price=category.max_price,
+            category_ids=category.category_ids,
         )
 
         stats = {

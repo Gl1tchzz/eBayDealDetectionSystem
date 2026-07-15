@@ -19,22 +19,12 @@ class EbayClient:
         self.current_index = (self.current_index + 1) % len(self.credentials)
         self.token = None
         self.token_created_at = 0
-
-        print(
-            f"[eBay] Rotated API key. "
-            f"Now using key {self.current_index + 1}/{len(self.credentials)}"
-        )
+        print(f"[eBay] Rotated API key. Now using key {self.current_index + 1}/{len(self.credentials)}")
 
     def get_access_token(self):
         credentials = self.current_credentials
-
-        raw_credentials = (
-            f"{credentials['client_id']}:{credentials['client_secret']}"
-        )
-
-        encoded = base64.b64encode(
-            raw_credentials.encode()
-        ).decode()
+        raw_credentials = f"{credentials['client_id']}:{credentials['client_secret']}"
+        encoded = base64.b64encode(raw_credentials.encode()).decode()
 
         response = requests.post(
             "https://api.ebay.com/identity/v1/oauth2/token",
@@ -50,31 +40,21 @@ class EbayClient:
         )
 
         if response.status_code == 429:
-            raise requests.exceptions.HTTPError(
-                "429 while getting eBay token",
-                response=response,
-            )
+            raise requests.exceptions.HTTPError("429 while getting eBay token", response=response)
 
         response.raise_for_status()
 
         self.token = response.json()["access_token"]
         self.token_created_at = time.time()
-
         return self.token
 
     def get_valid_token(self):
-        if self.token is None:
+        if self.token is None or time.time() - self.token_created_at > 7000:
             return self.get_access_token()
-
-        if time.time() - self.token_created_at > 7000:
-            return self.get_access_token()
-
         return self.token
 
     def request_with_rotation(self, params):
-        attempts = len(self.credentials)
-
-        for attempt in range(attempts):
+        for _ in range(len(self.credentials)):
             token = self.get_valid_token()
 
             response = requests.get(
@@ -98,27 +78,29 @@ class EbayClient:
         print("[eBay] All API keys are currently rate limited.")
         return None
 
-    def search(self, query, max_price):
+    def search(self, query, max_price, category_ids=None):
         all_items = []
         offset = 0
         page_size = 50
         total = None
 
+        params = {
+            "q": query,
+            "filter": (
+                f"price:[0..{max_price}],"
+                f"priceCurrency:GBP,"
+                f"buyingOptions:{{FIXED_PRICE}}"
+            ),
+            "sort": "newlyListed",
+            "limit": page_size,
+        }
+
+        if category_ids:
+            params["category_ids"] = category_ids
+
         while True:
-            response = self.request_with_rotation(
-                params={
-                    "q": query,
-                    "category_ids": "111422",
-                    "filter": (
-                        f"price:[0..{max_price}],"
-                        f"priceCurrency:GBP,"
-                        f"buyingOptions:{{FIXED_PRICE}}"
-                    ),
-                    "sort": "newlyListed",
-                    "limit": page_size,
-                    "offset": offset,
-                }
-            )
+            params["offset"] = offset
+            response = self.request_with_rotation(params=params)
 
             if response is None:
                 break
@@ -142,20 +124,22 @@ class EbayClient:
         print(f"  (fetched {len(all_items)} total)")
         return all_items
 
-    def search_auctions_ending_soon(self, query, max_price):
-        response = self.request_with_rotation(
-            params={
-                "q": query,
-                "category_ids": "111422",
-                "filter": (
-                    f"price:[0..{max_price}],"
-                    f"priceCurrency:GBP,"
-                    f"buyingOptions:{{AUCTION}}"
-                ),
-                "sort": "endingSoonest",
-                "limit": 50,
-            }
-        )
+    def search_auctions_ending_soon(self, query, max_price, category_ids=None):
+        params = {
+            "q": query,
+            "filter": (
+                f"price:[0..{max_price}],"
+                f"priceCurrency:GBP,"
+                f"buyingOptions:{{AUCTION}}"
+            ),
+            "sort": "endingSoonest",
+            "limit": 50,
+        }
+
+        if category_ids:
+            params["category_ids"] = category_ids
+
+        response = self.request_with_rotation(params=params)
 
         if response is None:
             return []

@@ -1,7 +1,7 @@
 PS5_TRADE_IN_PRICES = {
-    "PlayStation 5 Disc Edition": 260,
-    "PlayStation 5 Digital Edition": 220,
-    "PlayStation 5 Slim Disc Edition": 300,
+    "PlayStation 5 Disc Edition": 282,
+    "PlayStation 5 Digital Edition": 280,
+    "PlayStation 5 Slim Disc Edition": 260,
     "PlayStation 5 Slim Digital Edition": 260,
     "PlayStation 5 Pro": 500,
 }

@@ -7,6 +7,7 @@ class SearchCategory:
         required_words,
         banned_words=None,
         product_type="macbook",
+        category_ids=None,
     ):
         self.name = name
         self.query = query
@@ -14,3 +15,4 @@ class SearchCategory:
         self.required_words = required_words
         self.banned_words = banned_words or []
         self.product_type = product_type
+        self.category_ids = category_ids
